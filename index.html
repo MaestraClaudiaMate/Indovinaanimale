@@ -286,7 +286,7 @@
             <p class="sottotitolo" id="indicatore-progresso">Tocca «Ascolta» e scegli l'immagine giusta.</p>
         </header>
 
-        <!-- Box messaggio di errore se manca un file MP3 -->
+        <!-- Box messaggio di errore se manca un file audio -->
         <div id="box-errore" class="avviso-errore" role="alert">
             Attenzione: non trovo il file audio <span id="nome-file-mancante" class="nome-file-evidenziato"></span> nella cartella. Controlla che il file esista e tocca una carta per continuare a provare.
         </div>
@@ -325,13 +325,13 @@
     <script>
         /**
          * CONFIGURAZIONE DEI SUONI
-         * Nomi esatti dei file MP3 nella stessa cartella: cane.mp3, gatto.mp3, mucca.mp3, gallina.mp3
+         * Nomi esatti dei file audio nella stessa cartella: cane.wav, gatto.wav, mucca.ogg, gallina.wav
          */
         const ELENCO_SUONI = [
-            { id: 'cane', file: 'cane.mp3', parola: 'Cane', emoji: '🐶' },
-            { id: 'gatto', file: 'gatto.mp3', parola: 'Gatto', emoji: '🐱' },
-            { id: 'mucca', file: 'mucca.mp3', parola: 'Mucca', emoji: '🐮' },
-            { id: 'gallina', file: 'gallina.mp3', parola: 'Gallina', emoji: '🐔' }
+            { id: 'cane', file: 'cane.wav', parola: 'Cane', emoji: '🐶' },
+            { id: 'gatto', file: 'gatto.wav', parola: 'Gatto', emoji: '🐱' },
+            { id: 'mucca', file: 'mucca.ogg', parola: 'Mucca', emoji: '🐮' },
+            { id: 'gallina', file: 'gallina.wav', parola: 'Gallina', emoji: '🐔' }
         ];
 
         // Variabili di stato della partita (nessun dato salvato in memoria permanente)
@@ -410,7 +410,7 @@
         }
 
         /**
-         * Riproduce il file MP3 del suono corrente e gestisce eventuali file mancanti
+         * Riproduce il file del suono corrente e gestisce eventuali file mancanti
          */
         function riproduciSuonoCorrente() {
             const suonoAttuale = ordineSuoni[indiceCorrente];

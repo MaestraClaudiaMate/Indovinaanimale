@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indovina il suono</title>
+    <style>
+        /* ==========================================================================
+           RESET E IMPOSTAZIONI DI BASE
+           Un solo carattere senza grazie (sans-serif), grande, contrasto forte,
+           nessun link esterno, tutto allineato a sinistra come richiesto.
+           ========================================================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            background-color: #F4F7F6;
+            color: #111111;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            text-align: left;
+            line-height: 1.4;
+        }
+
+        /* Contenitore principale fluido per adattarsi a Telefono, Tablet e LIM */
+        .contenitore-principale {
+            width: 100%;
+            max-width: 900px;
+            background-color: #FFFFFF;
+            border: 4px solid #111111;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 8px 0 #111111;
+        }
+
+        /* ==========================================================================
+           TIPOGRAFIA E TESTATA
+           ========================================================================== */
+        header {
+            margin-bottom: 24px;
+            border-bottom: 3px solid #E0E0E0;
+            padding-bottom: 16px;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 900;
+            color: #111111;
+            margin-bottom: 8px;
+        }
+
+        .sottotitolo {
+            font-size: clamp(1.3rem, 3vw, 1.8rem);
+            font-weight: 700;
+            color: #333333;
+        }
+
+        /* ==========================================================================
+           MESSAGGIO DI ERRORE (FILE MANCANTE)
+           ========================================================================== */
+        .avviso-errore {
+            display: none; /* Nascosto finché non serve */
+            background-color: #FFF3CD;
+            border: 4px solid #B71C1C;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            color: #111111;
+            font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+            font-weight: 700;
+        }
+
+        .avviso-errore.visibile {
+            display: block;
+        }
+
+        .nome-file-evidenziato {
+            background-color: #FFE082;
+            padding: 2px 8px;
+            border-radius: 6px;
+            border: 2px solid #111111;
+            font-weight: 900;
+        }
+
+        /* ==========================================================================
+           PULSANTI GRANDI (Altezza minima 80px, alto contrasto, allineati a sinistra)
+           ========================================================================== */
+        .pulsante {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start; /* Testo allineato a sinistra */
+            width: 100%;
+            min-height: 88px; /* Ben oltre gli 80px richiesti */
+            padding: 16px 24px;
+            font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+            font-weight: 900;
+            border: 4px solid #111111;
+            border-radius: 16px;
+            cursor: pointer;
+            text-align: left;
+            transition: transform 0.1s ease, background-color 0.2s ease;
+            box-shadow: 0 6px 0 #111111;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .pulsante:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #111111;
+        }
+
+        /* Pulsante Ascolta */
+        .pulsante-ascolta {
+            background-color: #FFD600; /* Giallo acceso ad altissimo contrasto */
+            color: #111111;
+            margin-bottom: 32px;
+        }
+
+        .pulsante-ascolta:hover {
+            background-color: #FFEA00;
+        }
+
+        /* Pulsante Avanti */
+        .pulsante-avanti {
+            display: none; /* Compare solo quando si indovina */
+            background-color: #00E676;
+            color: #111111;
+            margin-top: 28px;
+        }
+
+        .pulsante-avanti.visibile {
+            display: flex;
+        }
+
+        .pulsante-avanti:hover {
+            background-color: #69F0AE;
+        }
+
+        /* Pulsante Ricomincia */
+        .pulsante-ricomincia {
+            background-color: #2979FF;
+            color: #FFFFFF;
+            margin-top: 24px;
+        }
+
+        .pulsante-ricomincia:hover {
+            background-color: #448AFF;
+        }
+
+        .icona-pulsante {
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            margin-right: 18px;
+            flex-shrink: 0;
+        }
+
+        /* ==========================================================================
+           GRIGLIA DELLE 3 CARTE
+           ========================================================================== */
+        .griglia-carte {
+            display: grid;
+            grid-template-columns: 1fr; /* 1 colonna su telefono */
+            gap: 20px;
+            width: 100%;
+        }
+
+        /* Su tablet e LIM (schermi più larghi di 650px), le 3 carte stanno affiancate */
+        @media (min-width: 650px) {
+            .griglia-carte {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .carta {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start; /* Contenuto allineato a sinistra */
+            min-height: 110px; /* Molto grande per dita e LIM */
+            padding: 20px;
+            background-color: #FFFFFF;
+            color: #111111;
+            border: 4px solid #111111;
+            border-radius: 18px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #111111;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .carta:hover:not(.disabilitata) {
+            background-color: #E3F2FD;
+        }
+
+        .carta:active:not(.disabilitata) {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #111111;
+        }
+
+        .carta-emoji {
+            font-size: clamp(2.8rem, 6vw, 4rem);
+            margin-right: 16px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .carta-parola {
+            font-size: clamp(1.6rem, 3.2vw, 2.2rem);
+            font-weight: 900;
+            color: #111111;
+            text-align: left;
+            word-break: break-word;
+        }
+
+        /* Stato carta GIUSTA: diventa verde */
+        .carta.giusta {
+            background-color: #00C853 !important;
+            color: #111111 !important;
+            border-color: #111111 !important;
+        }
+
+        /* Stato carta SBAGLIATA: trema */
+        .carta.sbagliata {
+            background-color: #FFCDD2 !important;
+            animation: tremore 0.45s ease-in-out;
+        }
+
+        .carta.disabilitata {
+            cursor: default;
+        }
+
+        /* Animazione di tremore orizzontale */
+        @keyframes tremore {
+            0% { transform: translateX(0); }
+            20% { transform: translateX(-12px); }
+            40% { transform: translateX(12px); }
+            60% { transform: translateX(-10px); }
+            80% { transform: translateX(10px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* ==========================================================================
+           SCHERMATA FINALE («Bravi!»)
+           ========================================================================== */
+        .schermata-finale {
+            display: none;
+            padding: 20px 0;
+        }
+
+        .schermata-finale.visibile {
+            display: block;
+        }
+
+        .titolo-bravi {
+            font-size: clamp(3rem, 7vw, 4.5rem);
+            font-weight: 900;
+            color: #008938;
+            margin-bottom: 16px;
+        }
+
+        .testo-bravi {
+            font-size: clamp(1.5rem, 3.5vw, 2rem);
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 24px;
+        }
+
+        /* Nasconde l'area di gioco quando finisce */
+        .nascosto {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <main class="contenitore-principale">
+        <!-- Intestazione -->
+        <header>
+            <h1>Indovina il suono</h1>
+            <p class="sottotitolo" id="indicatore-progresso">Tocca «Ascolta» e scegli l'immagine giusta.</p>
+        </header>
+
+        <!-- Box messaggio di errore se manca un file MP3 -->
+        <div id="box-errore" class="avviso-errore" role="alert">
+            Attenzione: non trovo il file audio <span id="nome-file-mancante" class="nome-file-evidenziato"></span> nella cartella. Controlla che il file esista e tocca una carta per continuare a provare.
+        </div>
+
+        <!-- Area di Gioco -->
+        <section id="area-gioco">
+            <!-- Grande pulsante Ascolta -->
+            <button type="button" id="btn-ascolta" class="pulsante pulsante-ascolta">
+                <span class="icona-pulsante" aria-hidden="true">🔊</span>
+                <span>Ascolta</span>
+            </button>
+
+            <!-- Contenitore delle 3 grandi carte -->
+            <div id="griglia-carte" class="griglia-carte">
+                <!-- Le 3 carte vengono generate qui da JavaScript -->
+            </div>
+
+            <!-- Pulsante Avanti (compare solo dopo la risposta esatta) -->
+            <button type="button" id="btn-avanti" class="pulsante pulsante-avanti">
+                <span class="icona-pulsante" aria-hidden="true">➡️</span>
+                <span>Avanti</span>
+            </button>
+        </section>
+
+        <!-- Schermata Finale -->
+        <section id="schermata-finale" class="schermata-finale">
+            <h2 class="titolo-bravi">🎉 Bravi!</h2>
+            <p class="testo-bravi">Avete indovinato tutti i suoni!</p>
+            <button type="button" id="btn-ricomincia" class="pulsante pulsante-ricomincia">
+                <span class="icona-pulsante" aria-hidden="true">🔄</span>
+                <span>Ricomincia</span>
+            </button>
+        </section>
+    </main>
+
+    <script>
+        /**
+         * CONFIGURAZIONE DEI SUONI
+         * Nomi esatti dei file MP3 nella stessa cartella: cane.mp3, gatto.mp3, mucca.mp3, gallina.mp3
+         */
+        const ELENCO_SUONI = [
+            { id: 'cane', file: 'cane.mp3', parola: 'Cane', emoji: '🐶' },
+            { id: 'gatto', file: 'gatto.mp3', parola: 'Gatto', emoji: '🐱' },
+            { id: 'mucca', file: 'mucca.mp3', parola: 'Mucca', emoji: '🐮' },
+            { id: 'gallina', file: 'gallina.mp3', parola: 'Gallina', emoji: '🐔' }
+        ];
+
+        // Variabili di stato della partita (nessun dato salvato in memoria permanente)
+        let ordineSuoni = [];
+        let indiceCorrente = 0;
+        let turnoRisolto = false;
+        let lettoreAudio = null;
+        let audioCtx = null;
+
+        // Riferimenti agli elementi della pagina
+        const areaGioco = document.getElementById('area-gioco');
+        const schermataFinale = document.getElementById('schermata-finale');
+        const grigliaCarte = document.getElementById('griglia-carte');
+        const btnAscolta = document.getElementById('btn-ascolta');
+        const btnAvanti = document.getElementById('btn-avanti');
+        const btnRicomincia = document.getElementById('btn-ricomincia');
+        const boxErrore = document.getElementById('box-errore');
+        const nomeFileMancante = document.getElementById('nome-file-mancante');
+        const indicatoreProgresso = document.getElementById('indicatore-progresso');
+
+        /**
+         * Mescola un array in ordine casuale (Algoritmo di Fisher-Yates)
+         */
+        function mescolaArray(array) {
+            const copia = [...array];
+            for (let i = copia.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copia[i], copia[j]] = [copia[j], copia[i]];
+            }
+            return copia;
+        }
+
+        /**
+         * Suona due note brevi di festa usando il sintetizzatore interno del browser (Web Audio API)
+         * Funziona completamente offline senza bisogno di file esterni.
+         */
+        function suonaNoteFesta() {
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextClass) return;
+
+                if (!audioCtx) {
+                    audioCtx = new AudioContextClass();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const adesso = audioCtx.currentTime;
+
+                // Prima nota: Do5 (523.25 Hz)
+                creaNota(523.25, adesso, 0.14);
+                // Seconda nota: Mi5 (659.25 Hz) subito dopo
+                creaNota(659.25, adesso + 0.15, 0.22);
+            } catch (errore) {
+                // Ignora silenziosamente se l'audio sintetizzato non è supportato
+            }
+        }
+
+        function creaNota(frequenza, tempoInizio, durata) {
+            const oscillatore = audioCtx.createOscillator();
+            const guadagno = audioCtx.createGain();
+
+            oscillatore.type = 'triangle'; // Suono dolce e chiaro adatto ai bambini
+            oscillatore.frequency.setValueAtTime(frequenza, tempoInizio);
+
+            guadagno.gain.setValueAtTime(0.01, tempoInizio);
+            guadagno.gain.exponentialRampToValueAtTime(0.25, tempoInizio + 0.03);
+            guadagno.gain.exponentialRampToValueAtTime(0.001, tempoInizio + durata);
+
+            oscillatore.connect(guadagno);
+            guadagno.connect(audioCtx.destination);
+
+            oscillatore.start(tempoInizio);
+            oscillatore.stop(tempoInizio + durata);
+        }
+
+        /**
+         * Riproduce il file MP3 del suono corrente e gestisce eventuali file mancanti
+         */
+        function riproduciSuonoCorrente() {
+            const suonoAttuale = ordineSuoni[indiceCorrente];
+            if (!suonoAttuale) return;
+
+            // Ferma eventuale audio precedente in corso
+            if (lettoreAudio) {
+                lettoreAudio.pause();
+                lettoreAudio.currentTime = 0;
+            }
+
+            // Nasconde l'avviso di errore precedente
+            boxErrore.classList.remove('visibile');
+
+            lettoreAudio = new Audio(suonoAttuale.file);
+
+            // Gestione errore caricamento file (es. file non trovato nella cartella)
+            lettoreAudio.onerror = function () {
+                mostraErroreFile(suonoAttuale.file);
+            };
+
+            // Avvia la riproduzione e cattura eventuali errori di lettura
+            const promessaPlay = lettoreAudio.play();
+            if (promessaPlay !== undefined) {
+                promessaPlay.catch(function (errore) {
+                    // Se l'errore non è dovuto al blocco automatico del browser, mostra file mancante
+                    if (errore.name !== 'NotAllowedError') {
+                        mostraErroreFile(suonoAttuale.file);
+                    }
+                });
+            }
+        }
+
+        /**
+         * Mostra un messaggio chiaro con il nome del file mancante senza bloccare l'app
+         */
+        function mostraErroreFile(nomeFile) {
+            nomeFileMancante.textContent = nomeFile;
+            boxErrore.classList.add('visibile');
+        }
+
+        /**
+         * Avvia o riavvia la partita da capo
+         */
+        function iniziaPartita() {
+            ordineSuoni = mescolaArray(ELENCO_SUONI);
+            indiceCorrente = 0;
+
+            schermataFinale.classList.remove('visibile');
+            areaGioco.classList.remove('nascosto');
+            boxErrore.classList.remove('visibile');
+
+            preparaTurno();
+        }
+
+        /**
+         * Prepara la schermata per il suono corrente con 1 carta giusta e 2 sbagliate casuali
+         */
+        function preparaTurno() {
+            turnoRisolto = false;
+            btnAvanti.classList.remove('visibile');
+            boxErrore.classList.remove('visibile');
+
+            const suonoGiusto = ordineSuoni[indiceCorrente];
+
+            // Aggiorna l'indicatore testuale in alto
+            indicatoreProgresso.textContent = `Suono ${indiceCorrente + 1} di ${ordineSuoni.length}: tocca «Ascolta» e scegli la carta.`;
+
+            // Sceglie 2 carte sbagliate a caso tra gli altri suoni
+            const altriSuoni = ELENCO_SUONI.filter(s => s.id !== suonoGiusto.id);
+            const dueSbagliati = mescolaArray(altriSuoni).slice(0, 2);
+
+            // Unisce la carta giusta alle 2 sbagliate e le mescola
+            const treCarte = mescolaArray([suonoGiusto, ...dueSbagliati]);
+
+            // Svuota e ricostruisce le 3 carte
+            grigliaCarte.innerHTML = '';
+
+            treCarte.forEach(elemento => {
+                const carta = document.createElement('button');
+                carta.type = 'button';
+                carta.className = 'carta';
+                carta.setAttribute('aria-label', elemento.parola);
+
+                carta.innerHTML = `
+                    <span class="carta-emoji" aria-hidden="true">${elemento.emoji}</span>
+                    <span class="carta-parola">${elemento.parola}</span>
+                `;
+
+                carta.addEventListener('click', function () {
+                    gestisciSceltaCarta(carta, elemento.id === suonoGiusto.id);
+                });
+
+                grigliaCarte.appendChild(carta);
+            });
+        }
+
+        /**
+         * Gestisce il tocco su una delle 3 carte
+         */
+        function gestisciSceltaCarta(elementoCarta, isGiusta) {
+            // Se il bambino ha già indovinato questo turno, ignora altri tocchi sulle carte
+            if (turnoRisolto) return;
+
+            if (isGiusta) {
+                // Risposta corretta!
+                turnoRisolto = true;
+                elementoCarta.classList.remove('sbagliata');
+                elementoCarta.classList.add('giusta');
+
+                // Disabilita visivamente le altre carte
+                const tutteLeCarte = grigliaCarte.querySelectorAll('.carta');
+                tutteLeCarte.forEach(c => c.classList.add('disabilitata'));
+
+                // Suona due note brevi di festa
+                suonaNoteFesta();
+
+                // Fa comparire il pulsante Avanti
+                btnAvanti.classList.add('visibile');
+            } else {
+                // Risposta sbagliata: la carta trema e si può riprovare senza penalità
+                elementoCarta.classList.remove('sbagliata');
+                // Forza il ricalcolo dello stile per permettere di ripetere l'animazione se ritoccata
+                void elementoCarta.offsetWidth;
+                elementoCarta.classList.add('sbagliata');
+            }
+        }
+
+        /**
+         * Passa al suono successivo oppure mostra la schermata finale «Bravi!»
+         */
+        function vaiAvanti() {
+            if (lettoreAudio) {
+                lettoreAudio.pause();
+            }
+
+            indiceCorrente++;
+
+            if (indiceCorrente < ordineSuoni.length) {
+                preparaTurno();
+                // Fa partire automaticamente il nuovo suono quando si preme Avanti
+                riproduciSuonoCorrente();
+            } else {
+                // Partita finita!
+                areaGioco.classList.add('nascosto');
+                boxErrore.classList.remove('visibile');
+                indicatoreProgresso.textContent = 'Gioco completato!';
+                schermataFinale.classList.add('visibile');
+                suonaNoteFesta();
+            }
+        }
+
+        // Collegamento eventi ai pulsanti principali
+        btnAscolta.addEventListener('click', riproduciSuonoCorrente);
+        btnAvanti.addEventListener('click', vaiAvanti);
+        btnRicomincia.addEventListener('click', iniziaPartita);
+
+        // Avvio iniziale al caricamento della pagina
+        window.addEventListener('DOMContentLoaded', iniziaPartita);
+    </script>
+</body>
+</html>
